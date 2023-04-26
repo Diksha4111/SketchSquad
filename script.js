@@ -134,8 +134,10 @@ canvas.addEventListener("mouseup", () => isDrawing = false);
 
 
 //TIMER
-function timer(){
-    let timeSecond = 60;
+function timer(time){
+    sendData(score);
+    let timeSecond = time;
+   
 const timeH = document.querySelector("#timer");
 
 displayTime(timeSecond);
@@ -167,6 +169,7 @@ function togglePopup(){
     document.getElementById("popup-1").classList.toggle("active");
 }
 
+let check;
 //Random word generator
 let btn = document.querySelector(".next");
 btn.addEventListener('click', function(){
@@ -175,13 +178,20 @@ btn.addEventListener('click', function(){
         "mango",
         "house",
         "ball",
-        "tree"
+        "tree",
+        "computer",
+        "juice"
     ];
     let disPlay = document.querySelector('.word');
-    disPlay.innerHTML = arr[Math.floor(Math.random()*arr.length)];;
+
+    disPlay.innerHTML = arr[Math.floor(Math.random()*arr.length)];
+    check = disPlay.innerHTML;
     console.log(disPlay.innerHTML);
 })
+console.log("check = " + check);
+
 //display chosen word
+
 let chosen = document.querySelector(".done");
 chosen.addEventListener('click', function(){
     togglePopup();
@@ -189,10 +199,11 @@ chosen.addEventListener('click', function(){
     let word = document.querySelector('.chosen');
     let w = disPlay.innerHTML;
     let text = w.charAt(0) + ' _ '.repeat(w.length - 2) + w.charAt(w.length - 1);
-    word.innerHTML = text;
-    console.log(word.innerHTML);
-
-    timer();
+    h1(word,w);
+    let timeSecond=60;
+    io.emit('time',timeSecond);
+    timer(timeSecond);
+    
 
 })
 
@@ -213,13 +224,17 @@ function join(){
 
 //chat
 let name;
-let score = 100;
+let score = 0;
+let update={
+    user: name,
+    score: score
+}
 let textarea = document.querySelector('#textarea')
 let messageArea = document.querySelector('.message__area')
 do{
     name = prompt('Please enter your name: ')
 } while(!name)
-//let u = name.charAt(0).toUpperCase();
+
 textarea.addEventListener('keyup', (e) => {
     if(e.key === 'Enter') {
         sendMessage(e.target.value)
@@ -231,7 +246,7 @@ function check1(message){
     let disPlay = document.querySelector('.word');
     let w = disPlay.innerHTML.trim();
     let m=message.trim();
-    let x = score; 
+    let x = update.score; 
     let crct = {
         user: name,
         message: name+' guessed correct answer'
@@ -242,10 +257,10 @@ function check1(message){
             user: name,
             score: y
         }
-
+        update=up;
         correct(crct,"correct")
         io.emit('correct', crct)
-        updatescore(up);
+        updatescore(update);
         io.emit('update',y);
     }
 }
@@ -279,6 +294,7 @@ function sendMessage(message) {
     // Send to server 
     io.emit('message', msg)
     check1(message);
+   
 
 }
 
@@ -303,36 +319,43 @@ function sendData(score) {
         user: name,
         score: score
     }
-    // Append 
-    updateuser(scr, 'score')
+    // Append setTimeout(
+        setTimeout(
+    updateuser(scr, 'score'),10000);
     
 
     // Send to server 
-    io.emit('score',scr);
+    
+    io.emit('score',scr)
 
 }
+
+
 let scoreArea = document.querySelector('.players');
+
 function updateuser(scr,type1){
 
     let uDiv = document.createElement('div')
     let className = type1
-    uDiv.classList.add(className, 'score')
+    uDiv.classList.add(className, 'score'+scr.user)
 
     let markup = `
         <h4>${scr.user}</h4>
-        <p>${scr.score}</p>
+        <p>Score: ${scr.score}</p>
     `
     uDiv.innerHTML = markup
     scoreArea.appendChild(uDiv)
 
 }
-sendData(score);
 
-function updatescore(up){
-    let y = document.querySelector(".score");
+//sendData(score)
+
+
+function updatescore(update){
+    let y = document.querySelector(".score"+update.user);
     y.innerHTML = `
-        <h4>${up.user}</h4>
-        <p>Score: ${up.score}</p>
+        <h4>${update.user}</h4>
+        <p>Score: ${update.score}</p>
     `
 
 }
@@ -358,7 +381,7 @@ io.on('score',(score)=>{
     updateuser(score,'score');
 })
 io.on('update',(y)=>{
-    updateuser(score,'score');
+    updatescore(update);
 })
 
 function scrollToBottom() {
