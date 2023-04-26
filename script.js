@@ -195,3 +195,172 @@ chosen.addEventListener('click', function(){
     timer();
 
 })
+
+function h1(word,w){
+    let disPlay = document.querySelector('.word');
+    disPlay.innerHTML=w;
+    let text = w.charAt(0) + ' _ '.repeat(w.length - 2) + w.charAt(w.length - 1);
+    word.innerHTML = text;
+    io.emit("h1",w);
+}
+
+//JOIN
+
+function join(){
+        window.location.href = './GamingArena.html';
+}
+
+
+//chat
+let name;
+let score = 100;
+let textarea = document.querySelector('#textarea')
+let messageArea = document.querySelector('.message__area')
+do{
+    name = prompt('Please enter your name: ')
+} while(!name)
+//let u = name.charAt(0).toUpperCase();
+textarea.addEventListener('keyup', (e) => {
+    if(e.key === 'Enter') {
+        sendMessage(e.target.value)
+    }
+})
+
+
+function check1(message){
+    let disPlay = document.querySelector('.word');
+    let w = disPlay.innerHTML.trim();
+    let m=message.trim();
+    let x = score; 
+    let crct = {
+        user: name,
+        message: name+' guessed correct answer'
+    }
+    if(m === w){
+        let y = x+10;
+        let up = {
+            user: name,
+            score: y
+        }
+
+        correct(crct,"correct")
+        io.emit('correct', crct)
+        updatescore(up);
+        io.emit('update',y);
+    }
+}
+
+//correct
+function correct(msg,type){
+    let mainDiv = document.createElement('div')
+    let className = type
+    mainDiv.classList.add(className, 'message')
+
+    let markup = `
+        <p>${msg.message}</p>
+    `
+    mainDiv.innerHTML = markup
+    messageArea.appendChild(mainDiv)
+}
+
+//Messages
+function sendMessage(message) {
+   
+    let msg = {
+        user: name,
+        message: message.trim()
+    }
+    // Append 
+    appendMessage(msg, 'outgoing')
+    textarea.value = ''
+    scrollToBottom()
+    console.log(message);
+
+    // Send to server 
+    io.emit('message', msg)
+    check1(message);
+
+}
+
+function appendMessage(msg, type) {
+    let mainDiv = document.createElement('div')
+    let className = type
+    mainDiv.classList.add(className, 'message')
+
+    let markup = `
+        <h4>${msg.user}</h4>
+        <p>${msg.message}</p>
+    `
+    mainDiv.innerHTML = markup
+    messageArea.appendChild(mainDiv)
+}
+
+
+//score 
+function sendData(score) {
+   
+    let scr = {
+        user: name,
+        score: score
+    }
+    // Append 
+    updateuser(scr, 'score')
+    
+
+    // Send to server 
+    io.emit('score',scr);
+
+}
+let scoreArea = document.querySelector('.players');
+function updateuser(scr,type1){
+
+    let uDiv = document.createElement('div')
+    let className = type1
+    uDiv.classList.add(className, 'score')
+
+    let markup = `
+        <h4>${scr.user}</h4>
+        <p>${scr.score}</p>
+    `
+    uDiv.innerHTML = markup
+    scoreArea.appendChild(uDiv)
+
+}
+sendData(score);
+
+function updatescore(up){
+    let y = document.querySelector(".score");
+    y.innerHTML = `
+        <h4>${up.user}</h4>
+        <p>Score: ${up.score}</p>
+    `
+
+}
+
+// Recieve messages 
+io.on('message', (msg) => {
+    appendMessage(msg, 'incoming')
+    scrollToBottom()
+})
+io.on('correct', (crct) => {
+    correct(crct, 'correct')
+    scrollToBottom()
+})
+io.on('h1',(w)=>{
+    let word = document.querySelector('.chosen');
+    h1(word,w);
+})
+
+io.on('time',(timeSecond)=>{
+    timer(timeSecond);
+})
+io.on('score',(score)=>{
+    updateuser(score,'score');
+})
+io.on('update',(y)=>{
+    updateuser(score,'score');
+})
+
+function scrollToBottom() {
+    messageArea.scrollTop = messageArea.scrollHeight
+}
