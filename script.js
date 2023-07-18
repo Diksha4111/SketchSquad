@@ -1,4 +1,47 @@
-const canvas = document.querySelector("canvas"),
+let canvas = document.getElementById("canvas");
+
+canvas.width = canvas.offsetWidth;
+canvas.height = canvas.offsetHeight;
+
+var io = io.connect();
+
+let ctx = canvas.getContext("2d");
+
+let x;
+let y;
+let mouseDown = false;
+
+
+window.onmousedown = (e) => {
+  ctx.moveTo(x, y);
+  io.emit('down' , {x,y})
+  mouseDown = true;
+};
+
+window.onmouseup = (e) => {
+  mouseDown = false;
+};
+
+io.on('ondraw' , ({x,y}) => {
+    ctx.lineTo(x, y);
+    ctx.stroke();
+})
+
+io.on('ondown' , ({x,y}) => {
+    ctx.moveTo(x, y);
+})
+
+window.onmousemove = (e) => {
+  x = e.offsetX;
+  y = e.offsetY;
+
+  if (mouseDown) {
+    io.emit("draw", { x,y });
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  }
+};
+/*const canvas = document.querySelector("canvas"),*/
 toolBtns = document.querySelectorAll(".tool"),
 fillColor = document.querySelector("#fill-color"),
 sizeSlider = document.querySelector("#size-slider"),
@@ -14,6 +57,7 @@ isDrawing = false,
 selectedTool = "brush",
 brushWidth = 5,
 selectedColor = "#000";
+
 
 const setCanvasBackground = () => {
     // setting whole canvas background to white, so the downloaded img background will be white
@@ -85,8 +129,8 @@ const drawing = (e) => {
         drawTriangle(e);
     }
 
-    context.lineTo(event.clientX - canvas.offsetLeft,
-        event.clientY - canvas.offsetTop);
+    context.lineTo(event.clientX - canvas.offsetLeft,event.clientY - canvas.offsetTop);
+    
 }
 
 toolBtns.forEach(btn => {
@@ -131,7 +175,6 @@ saveImg.addEventListener("click", () => {
 canvas.addEventListener("mousedown", startDraw);
 canvas.addEventListener("mousemove", drawing);
 canvas.addEventListener("mouseup", () => isDrawing = false);
-
 
 //TIMER
 function timer(time){
@@ -387,3 +430,4 @@ io.on('update',(y)=>{
 function scrollToBottom() {
     messageArea.scrollTop = messageArea.scrollHeight
 }
+ 
